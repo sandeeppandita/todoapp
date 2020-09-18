@@ -46,14 +46,38 @@ body,html{
   border-radius: 4px;
   background-color: #fefefe;
   box-shadow: 0px 1px 2px #dddddda1;
+
+  display: flex;
+  flex-direction: column;
 }
 .to-do-card .title{
   font-size: 12px;
   font-weight: 600;
   color: #154e5d;
-  min-height: 150px;
+  border-bottom: 1px solid #ebebeb;
+  padding: 0 0 5px 0;
+}
+.to-do-card form{
+  margin-top:auto;
 }
 .to-do-card .to-do-card-input{
   width: 100%;
 }
 
+.to-do-list{
+  margin: 5px 0;
+}
+.to-do-list-item{
+  font-size: 10px;
+  padding: 3px 0;
+}
+.to-do-list-item:hover {
+  background-color: #ebebeb;
+  cursor: pointer;
+  text-decoration: line-through;
+  border-radius: 2px;
+}
+.list-item-complete{}
+.list-item-incomplete{
+  text-decoration: line-through;
+} 

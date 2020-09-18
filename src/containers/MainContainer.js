@@ -1,27 +1,40 @@
 import React from 'react';
-import CreateCard from '../components/CreateCard'
-import ToDoCardContainer from '../containers/ToDoCardContainer'
+import CreateCard from '../components/CreateCard';
+import ToDoCardContainer from '../containers/ToDoCardContainer';
+import { ThemeContext } from '../components/ThemeContext';
 
 class MainContainer extends React.Component {
 
-    state = {
-      cards: [] 
-    }
-
+    state = {                
+      cards: [],
+    } 
+    
     componentDidMount(){
       fetch("https://5f316665373bc7001635f9ea.mockapi.io/todoapp/v1/todos")
-      .then( 
-        resp => resp.json() 
-      )  
+      .then(resp => resp.json())  
       .then(cards => {
-        this.setState({
-          cards: cards 
-        })  
+
+        fetch("https://5f316665373bc7001635f9ea.mockapi.io/todoapp/v1/lists")
+        .then(resp => resp.json())
+        .then(lists => {
+
+          let cardsWithList = cards.map( (card) => {
+            card.lists = lists.filter( (list) => {
+                return list.cart_id === card.id;
+            });
+            return card;
+          });  
+
+          this.setState({   
+            cards: cardsWithList 
+          }) 
+          
+        })
       })
     } 
 
     createNewCard = (input) => {
-      console.log('creating new card');
+      console.log('creating new card'); 
       fetch("https://5f316665373bc7001635f9ea.mockapi.io/todoapp/v1/todos", {
         method: "POST",
         headers: {
@@ -30,8 +43,8 @@ class MainContainer extends React.Component {
         },  
         body: JSON.stringify({      
           title: input, 
-          completed: 'false' 
-          // createdAt: 1  
+          completed: false,
+          lists:[]
         })
       }) 
       .then(resp => resp.json())
@@ -51,10 +64,10 @@ class MainContainer extends React.Component {
           'Content-type': 'application/json',
           'Accept': 'application/json'
         },  
-        body: JSON.stringify({   
-          cart_id: cardId, 
+        body: JSON.stringify({       
+          cart_id: cardId,       
           description: ListItem, 
-          completed: 'false' 
+          completed: false 
         })  
       }) 
       .then(resp => resp.json())
@@ -64,27 +77,99 @@ class MainContainer extends React.Component {
         const foundCard = {...this.state.cards.find(function(card){
           return card.id === cardId;
         })};
-
-        foundCard.lists = [];   
+ 
+        // foundCard.lists.push(newList);  
         foundCard.lists = [...foundCard.lists, newList];
 
-        console.log(foundCard);
-        // this.setState({
-        //   cards: [...this.state.cards, newCard]
-        // })
+        let newCards = this.state.cards.map(function(card){
+          if(card.id === cardId){
+            return foundCard;
+          }else{
+            return card;
+          }
+        });  
 
+        this.setState({
+          cards : newCards
+        });
+
+        // console.log(foundCard); 
+        // console.log(this.state.cards);
       })
     }  
 
-    render() {   
+    toggleListStatus = (cardId, listId) => {
+      console.log(cardId +'-'+  listId); 
+
+      let foundCard = this.state.cards.find( (card) => {
+        return card.id === cardId;
+      });
+
+      let foundList = foundCard.lists.find( (list) => {
+        return list.id === listId;
+      });
+
+      let toggleState = null;
+      if(foundList.completed){
+        toggleState = false;
+      }else{
+        toggleState = true;
+      }
+      
+      fetch("https://5f316665373bc7001635f9ea.mockapi.io/todoapp/v1/lists/" + listId, {
+        method: "PUT",
+        headers: {
+          'Content-type': 'application/json',
+          'Accept': 'application/json'
+        },  
+        body: JSON.stringify({   
+          completed: toggleState 
+        })  
+      }) 
+      .then(resp => resp.json())
+      .then(newList => {
+        console.log('new list added');
+        let newLists = foundCard.lists.map( (list)=> {
+           if(list.id === listId){
+             return newList;
+           }else{
+             return list;
+           }
+        });
+
+        foundCard.lists = newLists;
+
+        let newCards = this.state.cards.map( (card) => {
+          if(card.id === cardId){
+            return foundCard;
+          }else{
+            return card;
+          }
+        });
+
+        this.setState({
+          cards: newCards
+        })
+
+      });
+    }
+
+    render() { 
+      const data = {
+        theme: 'dark',
+      }; 
+
       return ( 
-        <div className="main-container">
-          <CreateCard createNewCard={this.createNewCard} />
-          <ToDoCardContainer cards={this.state.cards} addList={this.addList} /> 
-        </div> 
+        <div className="main-container"> 
+          <CreateCard createNewCard={this.createNewCard} /> 
+          <ThemeContext.Provider value={data}>
+            <ToDoCardContainer theme={this.state.theme} cards={this.state.cards} addList={this.addList} toggleListStatus={this.toggleListStatus} /> 
+          </ThemeContext.Provider>
+        </div>    
       );            
     }
 
 }
 
-export default MainContainer;
+export default MainContainer
+export { ThemeContext }
